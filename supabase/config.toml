@@ -1,0 +1,21 @@
+# Supabase Configuration
+# Replace with your own project_id after running: supabase link --project-ref YOUR_PROJECT_ID
+project_id = "your-project-id"
+
+[functions.recover-edit-link]
+verify_jwt = false
+
+[functions.event-calendar]
+verify_jwt = false
+
+[functions.create-event]
+verify_jwt = false
+
+[functions.notify-rsvp]
+verify_jwt = false
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.notify-waitlist-promotion]
+verify_jwt = false
