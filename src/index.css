@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Partito Design System Colors */
+    --coral: 0 100% 71%;
+    --coral-light: 0 100% 78%;
+    --coral-dark: 0 80% 62%;
+    --white: 0 0% 100%;
+    --cream: 24 100% 98%;
+    --warm-gray-50: 20 14% 97%;
+    --warm-gray-100: 20 14% 95%;
+    --warm-gray-200: 20 12% 91%;
+    --warm-gray-300: 20 8% 82%;
+    --warm-gray-400: 20 6% 70%;
+    --warm-gray-500: 15 4% 59%;
+    --warm-gray-700: 12 3% 35%;
+    --warm-gray-900: 15 5% 17%;
+    --honey: 36 91% 55%;
+    --sage: 144 30% 64%;
+    --sky: 210 63% 60%;
+    --success: 144 30% 64%;
+    --error: 0 80% 62%;
+    --warning: 36 91% 55%;
+    --info: 210 63% 60%;
+
+    /* Shadcn mappings */
+    --background: 0 0% 100%;
+    --foreground: 15 5% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 15 5% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 15 5% 17%;
+    --primary: 0 100% 71%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 20 14% 95%;
+    --secondary-foreground: 15 5% 17%;
+    --muted: 20 14% 95%;
+    --muted-foreground: 15 4% 59%;
+    --accent: 24 100% 98%;
+    --accent-foreground: 15 5% 17%;
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 12% 91%;
+    --input: 20 12% 91%;
+    --ring: 0 100% 71%;
+    --radius: 0.5rem;
+
+    /* Typography */
+    --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-warm-gray-900 leading-tight;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  
+  .font-body {
+    font-family: var(--font-body);
+  }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 200ms ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 250ms ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 200ms ease-out;
+}
+
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti 3s ease-out forwards;
+}
