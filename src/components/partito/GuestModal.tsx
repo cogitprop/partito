@@ -95,7 +95,7 @@ export const GuestModal: React.FC<GuestModalProps> = ({
             label="Plus-ones"
             value={formData.plus_ones || 0}
             onChange={(v) => setFormData((p) => ({ ...p, plus_ones: v }))}
-            max={10}
+            max={3}
           />
           <Input
             label="Dietary Note"

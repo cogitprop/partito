@@ -62,7 +62,7 @@ const About = () => {
 
         <div className="flex gap-3 mt-10">
           <Button onClick={() => navigate("/create")}>Create an Event</Button>
-          <Button variant="secondary" onClick={() => window.open("https://github.com/partito/partito", "_blank")}>
+          <Button variant="secondary" onClick={() => window.open("https://github.com/cogitprop/partito", "_blank")}>
             <Icon name="github" size={18} /> View Source
           </Button>
         </div>

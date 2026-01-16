@@ -1,71 +1,61 @@
 # Partito
 
-**Simple, beautiful event invitations without the sign-up.**
-
-Create shareable event pages with RSVPs, capacity limits, waitlists, and email notifications - all without requiring your guests to create accounts.
-
-[Live Demo][1] | [Report Bug][2] | [Request Feature][3]
-
-![Partito Screenshot][image-1]
+Beautiful event pages, effortless RSVPs. Create simple, beautiful event pages and collect RSVPs in seconds — no sign-up required.
 
 ## Features
 
-- **No Account Required** - Create events instantly, no sign-up needed
-- **Password Protection** - Keep private events private
-- **Smart RSVPs** - Going, Maybe, Can't Go responses with plus-ones
-- **Capacity & Waitlists** - Automatic waitlist management when events fill up
-- **Email Notifications** - Hosts get notified of new RSVPs
-- **Custom Questions** - Add your own questions to the RSVP form
-- **Calendar Integration** - Google Calendar and .ics downloads
-- **Mobile-Friendly** - Looks great on any device
-- **Privacy-First** - Minimal data collection, guest emails only visible to hosts
+- **No Account Required**: Create events instantly without signing up
+- **Beautiful Design**: Elegant, botanical-inspired event pages
+- **RSVP Management**: Collect and manage guest responses with ease
+- **Password Protection**: Optionally protect your event pages
+- **Waitlist Support**: Automatic waitlist management when events fill up
+- **Email Notifications**: Guests and hosts receive email updates
+- **Calendar Integration**: Add events to Google Calendar, Outlook, or download .ics files
+- **Shareable Links**: Easy-to-share event URLs
+- **Edit Access Recovery**: Recover access to your events via email
+- **Mobile Responsive**: Works beautifully on all devices
 
 ## Tech Stack
 
-- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS
-- **UI Components:** shadcn/ui, Radix UI
-- **Backend:** Supabase (PostgreSQL + Edge Functions)
-- **Email:** Resend
-- **Icons:** Lucide React
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
+- **State Management**: TanStack Query
+- **Form Handling**: React Hook Form + Zod validation
 
-## Self-Hosting Guide
+## Prerequisites
 
-### Prerequisites
+- Node.js 18+ or Bun
+- A Supabase account and project
+- (Optional) Resend account for email notifications
 
-- Node.js 18+ (or Bun)
-- A [Supabase][4] account (free tier works)
-- A [Resend][5] account for email notifications (free tier: 100 emails/day)
-- A domain with DNS access (for Resend email verification)
+## Getting Started
 
-### Step 1: Clone & Install
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/partito.git
+git clone https://github.com/YOUR-USERNAME/partito.git
 cd partito
-npm install
 ```
 
-### Step 2: Set Up Supabase
+### 2. Install dependencies
 
-1. Create a new project at [supabase.com][6]
-2. Go to **Project Settings \> API** and copy:
-   3. Project URL
-   4. `anon` public key
-3. Install Supabase CLI: `npm install -g supabase`
-4. Link your project: `supabase link --project-ref YOUR_PROJECT_ID`
-5. Run migrations: `supabase db push`
-6. Deploy edge functions: `supabase functions deploy`
+```bash
+npm install
+# or
+bun install
+```
 
-### Step 3: Set Up Resend
+### 3. Set up Supabase
 
-1. Create account at [resend.com][7]
-2. Add and verify your domain
-3. Create an API key
-4. In Supabase Dashboard, go to **Edge Functions \> Secrets** and add:
-   5. `RESEND_API_KEY` = your Resend API key
-   6. `SITE_URL` = your deployed URL (e.g., `https://events.yourdomain.com`)
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Run the database migrations in `supabase/migrations/` in order
+3. Deploy the Edge Functions from `supabase/functions/`
+4. Update `supabase/config.toml` with your project ID
 
-### Step 4: Configure Environment
+### 4. Configure environment variables
+
+Copy the example environment file and fill in your values:
 
 ```bash
 cp .env.example .env
@@ -79,49 +69,15 @@ VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
 VITE_SUPABASE_URL="https://your-project-id.supabase.co"
 ```
 
-### Step 5: Run Locally
+### 5. Start the development server
 
 ```bash
 npm run dev
+# or
+bun dev
 ```
 
-Visit `http://localhost:5173`
-
-### Step 6: Deploy
-
-Build for production:
-
-```bash
-npm run build
-```
-
-Deploy the `dist` folder to any static hosting:
-- [Vercel][8] (recommended)
-- [Netlify][9]
-- [Cloudflare Pages][10]
-
-## Configuration
-
-### Environment Variables
-
-| Variable                        | Required | Description              |
-| ------------------------------- | -------- | ------------------------ |
-| `VITE_SUPABASE_PROJECT_ID`      | Yes      | Your Supabase project ID |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes      | Supabase anon/public key |
-| `VITE_SUPABASE_URL`             | Yes      | Supabase project URL     |
-
-### Edge Function Secrets (in Supabase Dashboard)
-
-| Secret           | Required | Description                       |
-| ---------------- | -------- | --------------------------------- |
-| `RESEND_API_KEY` | Yes      | Resend API key for emails         |
-| `SITE_URL`       | Yes      | Your deployed URL for email links |
-
-### Customization
-
-- **Branding:** Edit `src/index.css` for colors, `tailwind.config.ts` for theme
-- **Email Templates:** Modify HTML in `supabase/functions/*/index.ts`
-- **Contact Email:** Update `hello@partito.org` references in edge functions
+The app will be available at `http://localhost:5173`
 
 ## Project Structure
 
@@ -133,57 +89,61 @@ partito/
 │   │   ├── partito/     # Custom Partito components
 │   │   └── ui/          # shadcn/ui components
 │   ├── contexts/        # React contexts
-│   ├── hooks/           # Custom hooks
-│   ├── integrations/    # Supabase client
-│   ├── lib/             # Utilities
-│   ├── pages/           # Route pages
+│   ├── hooks/           # Custom React hooks
+│   ├── integrations/    # Third-party integrations
+│   ├── lib/             # Utility functions
+│   ├── pages/           # Page components
 │   └── types/           # TypeScript types
-└── supabase/
-    ├── functions/       # Edge functions
-    └── migrations/      # Database schema
+├── supabase/
+│   ├── functions/       # Supabase Edge Functions
+│   └── migrations/      # Database migrations
+└── ...config files
 ```
+
+## Supabase Edge Functions
+
+The following Edge Functions power the backend:
+
+- `create-event`: Creates new events with secure token generation
+- `contact-form`: Handles contact form submissions
+- `event-calendar`: Generates calendar files (.ics)
+- `event-share`: Handles event sharing functionality
+- `notify-rsvp`: Sends RSVP notifications to hosts
+- `notify-waitlist-promotion`: Notifies guests promoted from waitlist
+- `og-image`: Generates Open Graph images for social sharing
+- `recover-edit-link`: Sends edit link recovery emails
+
+### Setting up email notifications
+
+To enable email notifications, set the `RESEND_API_KEY` secret in your Supabase Edge Functions:
+
+```bash
+supabase secrets set RESEND_API_KEY=your-resend-api-key
+```
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
 ## Contributing
 
-Contributions are welcome! Please read our[Contributing Guide][11] before submitting a PR.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Security
-
-For security concerns, please see our[Security Policy][12].
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0).
-
-This means:
-- You can use, modify, and distribute this software
-- If you run a modified version as a web service, you must make your source code available
-- Any modifications must also be licensed under AGPL-3.0
-
-See the [LICENSE][13] file for details.
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Built with[Lovable][14]
-- UI components from[shadcn/ui][15]
-- Icons from[Lucide][16]
-
-
-[1]:	https://partito.org
-[2]:	../../issues
-[3]:	../../issues
-[4]:	https://supabase.com
-[5]:	https://resend.com
-[6]:	https://supabase.com
-[7]:	https://resend.com
-[8]:	https://vercel.com
-[9]:	https://netlify.com
-[10]:	https://pages.cloudflare.com
-[11]:	CONTRIBUTING.md
-[12]:	SECURITY.md
-[13]:	LICENSE
-[14]:	https://lovable.dev
-[15]:	https://ui.shadcn.com
-[16]:	https://lucide.dev
-
-[image-1]:	public/og-image.png
+- Built with [Lovable](https://lovable.dev)
+- UI components from [shadcn/ui](https://ui.shadcn.com)
+- Icons from [Lucide](https://lucide.dev)

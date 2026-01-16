@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/partito/Button";
 import { Input } from "@/components/partito/Input";
 import { Card } from "@/components/partito/Card";
@@ -8,10 +9,11 @@ import { Checkbox } from "@/components/partito/Checkbox";
 import { NumberStepper } from "@/components/partito/NumberStepper";
 import { Select } from "@/components/partito/Select";
 import { Modal } from "@/components/partito/Modal";
+import { CalendarDropdown } from "@/components/partito/CalendarDropdown";
 import { useToast } from "@/contexts/ToastContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getEventBySlug,
-  getRsvpsForEvent,
   createRsvp,
   eventHasPassword,
   verifyEventPassword,
@@ -20,27 +22,17 @@ import {
 import {
   formatDate,
   formatTime,
-  generateGoogleCalendarUrl,
-  generateICS,
-  downloadICS,
   generateMapsUrl,
-  getAttendeeCount,
-  getRemainingCapacity,
-  isAtCapacity,
   isValidEmail,
+  getTimezoneAbbr,
 } from "@/lib/event-utils";
-import type { PublicEvent, Rsvp, CreateRsvpData, CustomQuestion } from "@/types/event";
-
-// Generate a fingerprint for the current user to track their RSVP
-const generateUserFingerprint = (name: string, eventId: string): string => {
-  return `${name.toLowerCase().trim()}-${eventId}`;
-};
+import type { PublicEvent, CreateRsvpData, CustomQuestion } from "@/types/event";
 
 const EventView = () => {
   const { slug } = useParams<{ slug: string }>();
   const { showToast } = useToast();
   const [event, setEvent] = useState<PublicEvent | null>(null);
-  const [rsvps, setRsvps] = useState<Rsvp[]>([]);
+  const [attendeeCount, setAttendeeCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -50,7 +42,6 @@ const EventView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
-  // Track if current user has RSVP'd as going (for virtual link visibility)
   const [currentUserIsGoing, setCurrentUserIsGoing] = useState(false);
 
   const [rsvpForm, setRsvpForm] = useState<CreateRsvpData & { custom_answers: Record<string, string | boolean> }>({
@@ -63,6 +54,36 @@ const EventView = () => {
     notifications_enabled: true,
     custom_answers: {},
   });
+
+  // Build dynamic meta tags for SEO/link previews
+  const metaInfo = useMemo(() => {
+    if (!event) return null;
+
+    const title = `${event.title}${event.host_name ? ` | Hosted by ${event.host_name}` : ""}`;
+    // Use window.location.origin for dynamic base URL
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const eventUrl = `${baseUrl}/e/${slug}`;
+
+    let description = event.description?.replace(/<[^>]*>/g, "").trim() || `You're invited to ${event.title}`;
+
+    if (event.start_time) {
+      const date = new Date(event.start_time);
+      const formattedDate = date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+      description = `${formattedDate} • ${description}`;
+    }
+
+    if (description.length > 160) {
+      description = description.substring(0, 157) + "...";
+    }
+
+    const image = event.cover_image || `${baseUrl}/og-image.png`;
+
+    return { title, description, image, eventUrl };
+  }, [event, slug]);
 
   // Check localStorage for previously submitted RSVP
   useEffect(() => {
@@ -81,48 +102,62 @@ const EventView = () => {
     }
   }, [event?.id]);
 
+  // Load attendee count via RPC
+  const loadAttendeeCount = useCallback(async (eventId: string) => {
+    const { data, error } = await supabase.rpc('get_public_attendee_count', { p_event_id: eventId });
+    if (!error && typeof data === 'number') {
+      setAttendeeCount(data);
+    }
+  }, []);
+
   useEffect(() => {
     const loadEvent = async () => {
-      if (!slug) return;
+      if (!slug) {
+        setLoading(false);
+        return;
+      }
 
       const eventData = await getEventBySlug(slug);
+
       if (eventData) {
         setEvent(eventData);
-        setRsvpForm((prev) => ({ ...prev, event_id: eventData.id }));
+        const defaultStatus = eventData.allow_going
+          ? "going"
+          : eventData.allow_maybe
+            ? "maybe"
+            : eventData.allow_not_going
+              ? "not_going"
+              : "going";
+        setRsvpForm((prev) => ({ ...prev, event_id: eventData.id, status: defaultStatus }));
 
-        // Check if password protected using secure server-side check
         const hasPassword = await eventHasPassword(slug);
         if (hasPassword) {
-          // Get password hint if available
           const hint = await getEventPasswordHint(slug);
           setPasswordHint(hint);
           setShowPasswordModal(true);
         } else {
           setIsUnlocked(true);
-          const rsvpData = await getRsvpsForEvent(eventData.id);
-          setRsvps(rsvpData);
+          await loadAttendeeCount(eventData.id);
         }
       }
       setLoading(false);
     };
 
     loadEvent();
-  }, [slug]);
+  }, [slug, loadAttendeeCount]);
 
   const handlePasswordSubmit = async () => {
     if (!slug || !passwordInput.trim()) return;
 
     setIsVerifyingPassword(true);
     try {
-      // Use secure server-side password verification
       const isValid = await verifyEventPassword(slug, passwordInput);
 
       if (isValid) {
         setIsUnlocked(true);
         setShowPasswordModal(false);
         if (event) {
-          const rsvpData = await getRsvpsForEvent(event.id);
-          setRsvps(rsvpData);
+          await loadAttendeeCount(event.id);
         }
       } else {
         showToast("Incorrect password", "error");
@@ -140,7 +175,6 @@ const EventView = () => {
       return;
     }
 
-    // Validate email if collection is enabled
     if (event?.collect_email && rsvpForm.email) {
       if (!isValidEmail(rsvpForm.email)) {
         showToast("Please enter a valid email address", "error");
@@ -148,7 +182,6 @@ const EventView = () => {
       }
     }
 
-    // Validate required custom questions
     const customQuestions = (event?.custom_questions || []) as CustomQuestion[];
     for (const question of customQuestions) {
       if (question.required && !rsvpForm.custom_answers[question.id]) {
@@ -160,24 +193,6 @@ const EventView = () => {
     setIsSubmitting(true);
     try {
       let finalStatus = rsvpForm.status;
-
-      // Check capacity (Note: This is still client-side; for true safety,
-      // capacity should be enforced in a database trigger)
-      if (event?.capacity && rsvpForm.status === "going") {
-        const currentCount = getAttendeeCount(rsvps);
-        const newTotal = currentCount + 1 + (rsvpForm.plus_ones || 0);
-
-        if (newTotal > event.capacity) {
-          if (event.enable_waitlist) {
-            finalStatus = "waitlist";
-            showToast("Event is at capacity. You've been added to the waitlist.", "info");
-          } else {
-            showToast("Event is at capacity", "error");
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
 
       const { rsvp, wasWaitlisted, atCapacity, error } = await createRsvp({
         ...rsvpForm,
@@ -199,7 +214,6 @@ const EventView = () => {
         showToast("Event is full - you've been added to the waitlist", "info");
       }
 
-      // Store RSVP info in localStorage for virtual link access
       if (event?.id) {
         localStorage.setItem(
           `partito_rsvp_${event.id}`,
@@ -212,9 +226,10 @@ const EventView = () => {
         if (rsvp.status === "going") {
           setCurrentUserIsGoing(true);
         }
+        // Reload count after RSVP
+        await loadAttendeeCount(event.id);
       }
 
-      setRsvps((prev) => [...prev.filter((r) => r.id !== rsvp.id), rsvp]);
       setRsvpSuccess(true);
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -239,19 +254,6 @@ const EventView = () => {
       notifications_enabled: true,
       custom_answers: {},
     });
-  };
-
-  const handleAddToCalendar = () => {
-    if (!event) return;
-    // Cast to Event type for calendar generation (safe since we only need public fields)
-    const url = generateGoogleCalendarUrl(event as any);
-    window.open(url, "_blank");
-  };
-
-  const handleDownloadICS = () => {
-    if (!event) return;
-    const ics = generateICS(event as any);
-    downloadICS(ics, `${event.slug}.ics`);
   };
 
   const updateCustomAnswer = (questionId: string, value: string | boolean) => {
@@ -287,28 +289,31 @@ const EventView = () => {
     );
   }
 
-  const attendeeCount = getAttendeeCount(rsvps);
-  const remainingCapacity = getRemainingCapacity(event as any, rsvps);
-  const atCapacity = isAtCapacity(event as any, rsvps);
-  const goingRsvps = rsvps.filter((r) => r.status === "going");
-  const maybeRsvps = rsvps.filter((r) => r.status === "maybe");
-  const waitlistRsvps = rsvps.filter((r) => r.status === "waitlist");
+  // Calculate capacity status from attendeeCount (already loaded via RPC)
+  const atCapacity = event.capacity ? attendeeCount >= event.capacity : false;
+  const remainingCapacity = event.capacity ? Math.max(0, event.capacity - attendeeCount) : null;
   const customQuestions = (event.custom_questions || []) as CustomQuestion[];
 
-  // Determine if current user can see the virtual link
-  // Show if: public visibility OR current user has RSVP'd as going
   const canSeeVirtualLink = event.virtual_link_visibility === "public" || currentUserIsGoing;
 
   return (
     <div className="min-h-screen bg-warm-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-warm-gray-100 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/" className="font-heading text-2xl font-bold text-coral">
-            Partito
-          </Link>
-        </div>
-      </header>
+      {metaInfo && (
+        <Helmet>
+          <title>{metaInfo.title}</title>
+          <meta name="description" content={metaInfo.description} />
+          <meta property="og:title" content={metaInfo.title} />
+          <meta property="og:description" content={metaInfo.description} />
+          <meta property="og:image" content={metaInfo.image} />
+          <meta property="og:url" content={metaInfo.eventUrl} />
+          <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={metaInfo.title} />
+          <meta name="twitter:description" content={metaInfo.description} />
+          <meta name="twitter:image" content={metaInfo.image} />
+          <link rel="canonical" href={metaInfo.eventUrl} />
+        </Helmet>
+      )}
 
       {/* Password Modal */}
       <Modal isOpen={showPasswordModal} onClose={() => {}} title="Event Protected" hideClose>
@@ -361,8 +366,13 @@ const EventView = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Icon name="clock" size={20} />
-                <span>{formatTime(event.start_time, event.timezone)}</span>
-                {event.end_time && <span>- {formatTime(event.end_time, event.timezone)}</span>}
+                <span>
+                  {formatTime(event.start_time, event.timezone)}
+                  {event.end_time && ` - ${formatTime(event.end_time, event.timezone)}`}
+                  {event.timezone && (
+                    <span className="text-warm-gray-400 ml-1">({getTimezoneAbbr(event.timezone)})</span>
+                  )}
+                </span>
               </div>
               {event.location_type === "in_person" && event.venue_name && (
                 <div className="flex items-center gap-2">
@@ -384,7 +394,6 @@ const EventView = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Description */}
               {event.description && (
                 <Card>
                   <h2 className="font-heading text-lg font-semibold mb-3">About this event</h2>
@@ -392,7 +401,6 @@ const EventView = () => {
                 </Card>
               )}
 
-              {/* Location Details */}
               {event.location_type === "in_person" && event.address && event.location_visibility !== "hidden" && (
                 <Card>
                   <h2 className="font-heading text-lg font-semibold mb-3">Location</h2>
@@ -418,7 +426,6 @@ const EventView = () => {
                 </Card>
               )}
 
-              {/* Virtual Link - Fixed: Only show to users who have RSVP'd as going */}
               {event.location_type === "virtual" && event.virtual_link && canSeeVirtualLink && (
                 <Card>
                   <h2 className="font-heading text-lg font-semibold mb-3">Join Online</h2>
@@ -428,7 +435,6 @@ const EventView = () => {
                 </Card>
               )}
 
-              {/* Virtual Link - Message for non-RSVP'd users when link is RSVP-only */}
               {event.location_type === "virtual" &&
                 event.virtual_link &&
                 event.virtual_link_visibility === "rsvp_only" &&
@@ -440,81 +446,6 @@ const EventView = () => {
                     </div>
                   </Card>
                 )}
-
-              {/* Guest List */}
-              {event.guest_list_visibility !== "host_only" && (
-                <Card>
-                  <h2 className="font-heading text-lg font-semibold mb-4">
-                    Guest List
-                    {event.capacity && (
-                      <span className="text-warm-gray-500 font-normal text-base ml-2">
-                        ({attendeeCount}/{event.capacity})
-                      </span>
-                    )}
-                  </h2>
-
-                  {event.guest_list_visibility === "count" ? (
-                    <div className="flex gap-6">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-sage">{goingRsvps.length}</div>
-                        <div className="text-sm text-warm-gray-500">Going</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-honey">{maybeRsvps.length}</div>
-                        <div className="text-sm text-warm-gray-500">Maybe</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {goingRsvps.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium text-sage mb-2 flex items-center gap-1">
-                            <Icon name="check" size={14} /> Going ({goingRsvps.length})
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {goingRsvps.map((rsvp) => (
-                              <span key={rsvp.id} className="px-3 py-1 bg-sage/10 text-sage rounded-full text-sm">
-                                {rsvp.name}
-                                {rsvp.plus_ones > 0 && ` +${rsvp.plus_ones}`}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {maybeRsvps.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium text-honey mb-2 flex items-center gap-1">
-                            <Icon name="clock" size={14} /> Maybe ({maybeRsvps.length})
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {maybeRsvps.map((rsvp) => (
-                              <span key={rsvp.id} className="px-3 py-1 bg-honey/10 text-honey rounded-full text-sm">
-                                {rsvp.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {waitlistRsvps.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium text-sky mb-2 flex items-center gap-1">
-                            <Icon name="users" size={14} /> Waitlist ({waitlistRsvps.length})
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {waitlistRsvps.map((rsvp) => (
-                              <span key={rsvp.id} className="px-3 py-1 bg-sky/10 text-sky rounded-full text-sm">
-                                {rsvp.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              )}
             </div>
 
             {/* Sidebar */}
@@ -536,12 +467,7 @@ const EventView = () => {
                       )}
                     </>
                   )}
-                  <Button variant="secondary" className="w-full" onClick={handleAddToCalendar}>
-                    <Icon name="calendar" size={18} /> Add to Calendar
-                  </Button>
-                  <Button variant="ghost" className="w-full" onClick={handleDownloadICS}>
-                    <Icon name="download" size={18} /> Download .ics
-                  </Button>
+                  <CalendarDropdown event={event} />
                 </div>
               </Card>
 
@@ -670,7 +596,6 @@ const EventView = () => {
                 />
               )}
 
-              {/* Custom Questions */}
               {customQuestions.length > 0 && (
                 <div className="border-t border-warm-gray-100 pt-5 space-y-4">
                   {customQuestions.map((question) => (

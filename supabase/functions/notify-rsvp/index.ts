@@ -9,12 +9,7 @@ const corsHeaders = {
 };
 
 interface NotifyRequest {
-  eventId: string;
-  guestName: string;
-  guestEmail?: string;
-  status: string;
-  plusOnes?: number;
-  dietaryNote?: string;
+  rsvpId: string;
   wasWaitlisted?: boolean;
 }
 
@@ -39,12 +34,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const payload: NotifyRequest = await req.json();
-    const { eventId, guestName, guestEmail, status, plusOnes, dietaryNote, wasWaitlisted } = payload;
+    const { rsvpId, wasWaitlisted } = payload;
 
-    console.log(`RSVP notification for event ${eventId}: ${guestName} - ${status}`);
+    console.log(`RSVP notification request for rsvpId ${rsvpId}`);
 
-    if (!eventId || !guestName) {
-      return new Response(JSON.stringify({ error: "Event ID and guest name are required" }), {
+    if (!rsvpId) {
+      return new Response(JSON.stringify({ error: "RSVP ID is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -52,14 +47,49 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Create Supabase client with service role for admin access
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify RSVP exists and was recently created (within last 5 minutes)
+    // This prevents spam by ensuring only recent, valid RSVPs can trigger notifications
+    const { data: rsvp, error: rsvpError } = await supabase
+      .from("rsvps")
+      .select("id, event_id, name, email, status, plus_ones, dietary_note, created_at")
+      .eq("id", rsvpId)
+      .maybeSingle();
+
+    if (rsvpError) {
+      console.error("Database error fetching RSVP:", rsvpError);
+      return new Response(JSON.stringify({ error: "Failed to fetch RSVP" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (!rsvp) {
+      console.log("RSVP not found");
+      return new Response(JSON.stringify({ error: "RSVP not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Security: Only allow notifications for RSVPs created in the last 5 minutes
+    const createdAt = new Date(rsvp.created_at);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (createdAt < fiveMinutesAgo) {
+      console.log("RSVP too old for notification");
+      return new Response(JSON.stringify({ success: true, notified: false, reason: "RSVP too old" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Get event details
     const { data: event, error: dbError } = await supabase
       .from("events")
       .select("id, title, slug, host_email, host_name, notify_on_rsvp")
-      .eq("id", eventId)
+      .eq("id", rsvp.event_id)
       .maybeSingle();
 
     if (dbError) {
@@ -86,6 +116,13 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    // Use data from database (trusted source)
+    const guestName = rsvp.name;
+    const guestEmail = rsvp.email;
+    const status = rsvp.status;
+    const plusOnes = rsvp.plus_ones;
+    const dietaryNote = rsvp.dietary_note;
 
     // Prepare status display
     const statusDisplay = wasWaitlisted
@@ -121,7 +158,8 @@ const handler = async (req: Request): Promise<Response> => {
       details.push(`Dietary: ${escapeHtml(dietaryNote)}`);
     }
 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://partito.org";
+    // TODO: Set SITE_URL environment variable in your Supabase project
+    const baseUrl = Deno.env.get("SITE_URL") || "https://your-domain.com";
 
     // Sanitize event data as well
     const safeGuestName = escapeHtml(guestName);
@@ -138,7 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Partito <onboarding@resend.dev>",
+        from: "Partito <noreply@partito.org>",
         to: [event.host_email],
         subject: `${statusEmoji} New RSVP: ${safeGuestName} ${statusDisplay}`,
         html: `

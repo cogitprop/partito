@@ -25,7 +25,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) {
     const baseStyles =
-      "inline-flex items-center justify-center gap-2 font-medium rounded-lg cursor-pointer transition-all duration-150 outline-none disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2";
+      "inline-flex items-center justify-center gap-2 font-medium rounded-lg cursor-pointer transition-all duration-150 outline-none disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2";
 
     const sizeStyles = {
       sm: "px-4 py-2 text-sm",
@@ -36,10 +36,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        "bg-coral text-white border-none hover:bg-coral-light hover:shadow-md hover:scale-[1.02] active:bg-coral-dark active:scale-[0.98]",
+        "bg-sage text-white border-none hover:bg-sage-light hover:shadow-md hover:scale-[1.02] active:bg-sage-dark active:scale-[0.98]",
       secondary:
-        "bg-transparent border-2 border-warm-gray-300 text-warm-gray-700 hover:bg-cream hover:border-coral active:bg-warm-gray-100",
-      ghost: "bg-transparent border-none text-coral hover:bg-coral/10 active:bg-coral/15",
+        "bg-transparent border-2 border-warm-gray-300 text-warm-gray-700 hover:bg-cream-dark hover:border-sage active:bg-warm-gray-100",
+      ghost: "bg-transparent border-none text-sage-dark hover:bg-sage/10 active:bg-sage/15",
       destructive:
         "bg-error text-white border-none hover:bg-error/90 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
     };

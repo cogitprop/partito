@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/partito/Button";
 import { Card } from "@/components/partito/Card";
 import { Icon } from "@/components/partito/Icon";
+import { BotanicalDecorations } from "@/components/partito/BotanicalDecorations";
 
 const Index = () => {
   const features = [
@@ -12,17 +13,18 @@ const Index = () => {
   ];
 
   return (
-    <div className="bg-warm-gray-50">
+    <div className="bg-cream">
       {/* Hero Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-20 px-6 relative">
+        <BotanicalDecorations />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <h1 className="font-heading text-5xl md:text-6xl font-bold text-warm-gray-900 mb-6 leading-tight">
             Party incognito.
-            <span className="block text-coral">No login required.</span>
+            <span className="block text-sage-dark">No login required.</span>
           </h1>
           <p className="text-xl text-warm-gray-500 mb-10 max-w-2xl mx-auto">
-            Create beautiful event invitations in seconds. Collect RSVPs, manage guests, and share updates — all without
-            creating an account.
+            Create simple, beautiful event invitations in seconds. Collect RSVPs, manage guests, and share updates — all
+            without creating an account.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/create">
@@ -40,7 +42,7 @@ const Index = () => {
       </section>
 
       {/* Features Grid */}
-      <section className="py-16 px-6 bg-white">
+      <section className="py-16 px-6 bg-card">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-heading text-3xl font-semibold text-center mb-12">
             Everything you need, nothing you don't
@@ -48,8 +50,8 @@ const Index = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature) => (
               <Card key={feature.title} hover className="text-center">
-                <div className="w-14 h-14 bg-cream rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name={feature.icon} size={28} className="text-coral" />
+                <div className="w-14 h-14 bg-sage-light/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name={feature.icon} size={28} className="text-sage-dark" />
                 </div>
                 <h3 className="font-heading text-lg font-semibold mb-2">{feature.title}</h3>
                 <p className="text-warm-gray-500 text-sm">{feature.desc}</p>
@@ -61,7 +63,7 @@ const Index = () => {
 
       {/* CTA Section */}
       <section className="py-20 px-6">
-        <div className="max-w-2xl mx-auto text-center bg-gradient-to-br from-coral/10 to-honey/10 rounded-3xl p-12">
+        <div className="max-w-2xl mx-auto text-center bg-gradient-to-br from-sage/10 to-terracotta/10 rounded-3xl p-12 border border-sage/20">
           <h2 className="font-heading text-3xl font-semibold mb-4">Ready to plan your event?</h2>
           <p className="text-warm-gray-600 mb-8">No account needed. Start creating in seconds.</p>
           <Link to="/create">

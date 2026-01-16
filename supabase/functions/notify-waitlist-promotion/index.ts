@@ -133,7 +133,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://partito.org";
+    // TODO: Set SITE_URL environment variable in your Supabase project
+    const baseUrl = Deno.env.get("SITE_URL") || "https://your-domain.com";
 
     // Sanitize all user-provided data
     const safeGuestName = escapeHtml(rsvp.name);
@@ -172,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Partito <noreply@partito.org>",
+        from: "Partito <onboarding@resend.dev>",
         to: [rsvp.email],
         subject: `🎉 You're in! A spot opened up for ${safeEventTitle}`,
         html: `

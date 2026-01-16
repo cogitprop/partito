@@ -9,9 +9,10 @@ import { Modal } from '@/components/partito/Modal';
 import { Checkbox } from '@/components/partito/Checkbox';
 import { Toggle } from '@/components/partito/Toggle';
 import { NumberStepper } from '@/components/partito/NumberStepper';
+import { DateTimePicker } from '@/components/partito/DateTimePicker';
 import { useToast } from '@/contexts/ToastContext';
 import { getEventByToken, getRsvpsForHost, updateEvent, deleteEvent, cancelEvent, updateRsvp, deleteRsvp, promoteFromWaitlist, createEventUpdate, getUpdatesForEvent } from '@/lib/data-store';
-import { formatDate, formatTime, copyToClipboard, exportGuestsCSV, getAttendeeCount } from '@/lib/event-utils';
+import { formatDate, formatTime, copyToClipboard, exportGuestsCSV, getAttendeeCount, getShareableEventUrl } from '@/lib/event-utils';
 import type { Event, Rsvp } from '@/types/event';
 
 type Tab = 'details' | 'guests' | 'settings' | 'updates';
@@ -166,8 +167,9 @@ const EventEdit = () => {
     }
   };
 
-  const shareUrl = event ? `${window.location.origin}/e/${event.slug}` : '';
-  const editUrl = event ? `${shareUrl}/edit?token=${event.edit_token}` : '';
+  // Use the shareable URL that goes through the edge function for proper OG tags
+  const shareUrl = event ? getShareableEventUrl(event.slug) : '';
+  const editUrl = event ? `${window.location.origin}/e/${event.slug}/edit?token=${event.edit_token}` : '';
 
   if (loading) {
     return (
@@ -210,22 +212,19 @@ const EventEdit = () => {
 
   return (
     <div className="min-h-screen bg-warm-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-warm-gray-100 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/" className="font-heading text-2xl font-bold text-coral">Partito</Link>
-          <div className="flex items-center gap-3">
-            <Link to={`/e/${event.slug}`}>
-              <Button variant="ghost" size="sm">
-                <Icon name="eye" size={16} /> View Event
-              </Button>
-            </Link>
-            <Button size="sm" onClick={() => setShowShareModal(true)}>
-              <Icon name="share" size={16} /> Share
+      {/* Action buttons below global header */}
+      <div className="bg-cream border-b border-warm-gray-100 px-6 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-end gap-3">
+          <Link to={`/e/${event.slug}`}>
+            <Button variant="ghost" size="sm">
+              <Icon name="eye" size={16} /> View Event
             </Button>
-          </div>
+          </Link>
+          <Button size="sm" onClick={() => setShowShareModal(true)}>
+            <Icon name="share" size={16} /> Share
+          </Button>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Event Header */}
@@ -296,20 +295,31 @@ const EventEdit = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DateTimePicker
                   label="Start Date & Time"
-                  type="datetime-local"
-                  value={event.start_time ? new Date(event.start_time).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setEvent(prev => prev ? { ...prev, start_time: e.target.value } : null)}
-                  onBlur={() => handleSave({ start_time: event.start_time })}
+                  value={event.start_time}
+                  onChange={(value) => {
+                    setEvent(prev => prev ? { ...prev, start_time: value } : null);
+                    handleSave({ start_time: value });
+                  }}
+                  required
+                  timezone={event.timezone}
+                  onTimezoneChange={(tz) => {
+                    setEvent(prev => prev ? { ...prev, timezone: tz } : null);
+                    handleSave({ timezone: tz });
+                  }}
+                  showTimezone
                 />
-                <Input
+                <DateTimePicker
                   label="End Date & Time"
-                  type="datetime-local"
-                  value={event.end_time ? new Date(event.end_time).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setEvent(prev => prev ? { ...prev, end_time: e.target.value } : null)}
-                  onBlur={() => handleSave({ end_time: event.end_time })}
+                  value={event.end_time || ''}
+                  onChange={(value) => {
+                    setEvent(prev => prev ? { ...prev, end_time: value } : null);
+                    handleSave({ end_time: value });
+                  }}
+                  placeholder="Optional end time"
+                  timezone={event.timezone}
                 />
               </div>
 
@@ -459,12 +469,23 @@ const EventEdit = () => {
                     value={event.max_plus_ones}
                     onChange={(val) => handleSave({ max_plus_ones: val })}
                     min={1}
-                    max={10}
+                    max={3}
                   />
                 )}
               </div>
 
               <div className="border-t border-warm-gray-100 pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-medium text-warm-gray-900">Enable Waitlist</h3>
+                    <p className="text-sm text-warm-gray-500">When capacity is reached, new guests join a waitlist</p>
+                  </div>
+                  <Toggle
+                    checked={event.enable_waitlist}
+                    onChange={(checked) => handleSave({ enable_waitlist: checked })}
+                  />
+                </div>
+
                 <Input
                   label="Event Capacity"
                   type="number"
@@ -476,15 +497,130 @@ const EventEdit = () => {
               </div>
 
               <div className="border-t border-warm-gray-100 pt-6">
+                <h3 className="font-medium text-warm-gray-900 mb-3">Guest Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-warm-gray-900">Collect Email Addresses</p>
+                      <p className="text-sm text-warm-gray-500">Ask guests for their email when RSVPing</p>
+                    </div>
+                    <Toggle
+                      checked={event.collect_email}
+                      onChange={(checked) => handleSave({ collect_email: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-warm-gray-900">Collect Dietary Requirements</p>
+                      <p className="text-sm text-warm-gray-500">Ask guests about dietary restrictions</p>
+                    </div>
+                    <Toggle
+                      checked={event.collect_dietary}
+                      onChange={(checked) => handleSave({ collect_dietary: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-warm-gray-100 pt-6">
+                <h3 className="font-medium text-warm-gray-900 mb-3">Visibility Settings</h3>
+                <div className="space-y-4">
+                  <Select
+                    label="Guest List Visibility"
+                    value={event.guest_list_visibility}
+                    onChange={(val) => handleSave({ guest_list_visibility: val as Event['guest_list_visibility'] })}
+                    options={[
+                      { value: 'full', label: 'Full details (names & responses)' },
+                      { value: 'names', label: 'Names only' },
+                      { value: 'count', label: 'Count only' },
+                      { value: 'host_only', label: 'Host only' },
+                    ]}
+                  />
+                  <Select
+                    label="Location Visibility"
+                    value={event.location_visibility || 'full'}
+                    onChange={(val) => handleSave({ location_visibility: val as Event['location_visibility'] })}
+                    options={[
+                      { value: 'full', label: 'Show full address' },
+                      { value: 'area', label: 'Show area only' },
+                      { value: 'hidden', label: 'Hidden until RSVP' },
+                    ]}
+                  />
+                  {event.virtual_link && (
+                    <Select
+                      label="Virtual Link Visibility"
+                      value={event.virtual_link_visibility || 'public'}
+                      onChange={(val) => handleSave({ virtual_link_visibility: val as Event['virtual_link_visibility'] })}
+                      options={[
+                        { value: 'public', label: 'Visible to everyone' },
+                        { value: 'rsvp_only', label: 'Only show to confirmed guests' },
+                      ]}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-warm-gray-100 pt-6">
+                <h3 className="font-medium text-warm-gray-900 mb-3">Host Settings</h3>
+                <div className="space-y-4">
+                  <Input
+                    label="Host Email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={event.host_email || ''}
+                    onChange={(e) => setEvent(prev => prev ? { ...prev, host_email: e.target.value } : null)}
+                    onBlur={() => handleSave({ host_email: event.host_email })}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-warm-gray-900">Notify on New RSVPs</p>
+                      <p className="text-sm text-warm-gray-500">Receive email when guests respond</p>
+                    </div>
+                    <Toggle
+                      checked={event.notify_on_rsvp}
+                      onChange={(checked) => handleSave({ notify_on_rsvp: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-warm-gray-100 pt-6">
+                <h3 className="font-medium text-warm-gray-900 mb-3">Privacy & Security</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Input
+                      label="Event Password"
+                      type="password"
+                      placeholder="Leave empty for public event"
+                      value=""
+                      onChange={(e) => setEvent(prev => prev ? { ...prev, password: e.target.value } : null)}
+                      onBlur={() => event.password && handleSave({ password: event.password })}
+                    />
+                    <p className="text-xs text-warm-gray-500 mt-1">
+                      {event.password ? "Password is set. Enter a new value to change it." : "Optional. Guests must enter this to view the event."}
+                    </p>
+                  </div>
+                  <Input
+                    label="Password Hint"
+                    placeholder="Optional hint for guests"
+                    value={event.password_hint || ''}
+                    onChange={(e) => setEvent(prev => prev ? { ...prev, password_hint: e.target.value } : null)}
+                    onBlur={() => handleSave({ password_hint: event.password_hint })}
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-warm-gray-100 pt-6">
+                <h3 className="font-medium text-warm-gray-900 mb-3">Data Management</h3>
                 <Select
-                  label="Guest List Visibility"
-                  value={event.guest_list_visibility}
-                  onChange={(val) => handleSave({ guest_list_visibility: val as Event['guest_list_visibility'] })}
+                  label="Auto-Delete After Event"
+                  value={event.auto_delete_days?.toString() || '30'}
+                  onChange={(val) => handleSave({ auto_delete_days: parseInt(val) })}
                   options={[
-                    { value: 'full', label: 'Full details (names & responses)' },
-                    { value: 'names', label: 'Names only' },
-                    { value: 'count', label: 'Count only' },
-                    { value: 'host_only', label: 'Host only' },
+                    { value: '7', label: '7 days after event' },
+                    { value: '30', label: '30 days after event' },
+                    { value: '90', label: '90 days after event' },
+                    { value: '365', label: '1 year after event' },
                   ]}
                 />
               </div>
@@ -541,20 +677,7 @@ const EventEdit = () => {
                 <Icon name="copy" size={16} />
               </Button>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-warm-gray-700 mb-2">Edit Link (keep this private!)</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                readOnly
-                value={editUrl}
-                className="flex-1 px-4 py-2 rounded-xl border border-warm-gray-200 bg-warm-gray-50 text-warm-gray-700"
-              />
-              <Button variant="secondary" onClick={() => { copyToClipboard(editUrl); showToast('Link copied!', 'success'); }}>
-                <Icon name="copy" size={16} />
-              </Button>
-            </div>
+            <p className="text-xs text-warm-gray-500 mt-2">Share this link with your guests to let them RSVP.</p>
           </div>
         </div>
       </Modal>

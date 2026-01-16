@@ -44,9 +44,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           className={cn(
             'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-150',
             checked 
-              ? 'bg-coral border-coral' 
-              : 'bg-white border-warm-gray-300',
-            isFocused && 'ring-2 ring-coral/30'
+              ? 'bg-sage border-sage' 
+              : 'bg-warm-gray-100 border-warm-gray-400',
+            isFocused && 'ring-2 ring-sage/30'
           )}
         >
           {checked && <Icon name="check" size={14} className="text-white" />}

@@ -57,15 +57,27 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Partito Design System Colors
+        // Partito Design System Colors - Botanical Theme
+        terracotta: {
+          DEFAULT: "hsl(var(--terracotta))",
+          light: "hsl(var(--terracotta-light))",
+          dark: "hsl(var(--terracotta-dark))",
+        },
+        cream: {
+          DEFAULT: "hsl(var(--cream))",
+          dark: "hsl(var(--cream-dark))",
+        },
+        sage: {
+          DEFAULT: "hsl(var(--sage))",
+          light: "hsl(var(--sage-light))",
+          dark: "hsl(var(--sage-dark))",
+        },
         coral: {
           DEFAULT: "hsl(var(--coral))",
           light: "hsl(var(--coral-light))",
           dark: "hsl(var(--coral-dark))",
         },
-        cream: "hsl(var(--cream))",
         honey: "hsl(var(--honey))",
-        sage: "hsl(var(--sage))",
         sky: "hsl(var(--sky))",
         success: "hsl(var(--success))",
         error: "hsl(var(--error))",

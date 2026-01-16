@@ -1,5 +1,24 @@
 import type { Event, Rsvp } from "@/types/event";
 
+// Production domain for shareable links
+const PRODUCTION_DOMAIN = "https://partito.org";
+
+/**
+ * Generate the shareable URL for an event.
+ * Uses clean production URLs - Cloudflare Worker handles crawler detection
+ * and proxies to Supabase edge function for dynamic OG meta tags.
+ */
+export const getShareableEventUrl = (slug: string): string => {
+  return `https://share.partito.org/e/${slug}`;
+};
+
+/**
+ * Generate the direct event URL (for internal use/redirects)
+ */
+export const getDirectEventUrl = (slug: string): string => {
+  return `${PRODUCTION_DOMAIN}/e/${slug}`;
+};
+
 export const generateId = (): string => {
   const array = new Uint8Array(8);
   crypto.getRandomValues(array);

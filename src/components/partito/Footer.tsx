@@ -44,7 +44,7 @@ export const Footer: React.FC<FooterProps> = ({ className }) => {
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Brand */}
         <div>
-          <span className="font-heading text-xl font-bold text-white">Partito</span>
+          <span className="font-logo text-xl font-medium tracking-[0.15em] text-white">PARTITO</span>
           <p className="text-warm-gray-500 text-sm mt-2">
             Party incognito.
             <br />
@@ -67,7 +67,7 @@ export const Footer: React.FC<FooterProps> = ({ className }) => {
           <div className="flex flex-col gap-2">
             {/* FIX: Removed link to /docs which doesn't exist */}
             <FooterLink onClick={() => handleNavigate("recover")}>Recover Edit Link</FooterLink>
-            <FooterLink href="https://github.com/partito/partito">GitHub</FooterLink>
+            <FooterLink href="https://github.com/cogitprop/partito">GitHub</FooterLink>
           </div>
         </div>
 
@@ -75,9 +75,10 @@ export const Footer: React.FC<FooterProps> = ({ className }) => {
         <div>
           <h4 className="text-warm-gray-500 text-xs uppercase tracking-wider mb-4">Company</h4>
           <div className="flex flex-col gap-2">
-            {/* FIX: Removed links to /about, /privacy, /terms which don't exist */}
-            {/* TODO: Add these pages or use external links to your legal documents */}
+            <FooterLink onClick={() => handleNavigate("about")}>About</FooterLink>
             <FooterLink onClick={() => handleNavigate("contact")}>Contact</FooterLink>
+            <FooterLink onClick={() => handleNavigate("privacy")}>Privacy</FooterLink>
+            <FooterLink onClick={() => handleNavigate("terms")}>Terms</FooterLink>
           </div>
         </div>
       </div>
@@ -87,7 +88,7 @@ export const Footer: React.FC<FooterProps> = ({ className }) => {
         <span className="text-warm-gray-500 text-sm">© 2026 Partito. Open source under AGPL-3.0.</span>
         <div className="flex gap-4">
           <a
-            href="https://github.com/partito"
+            href="https://github.com/cogitprop/partito"
             target="_blank"
             rel="noopener noreferrer"
             className="text-warm-gray-400 hover:text-warm-gray-300 transition-colors"

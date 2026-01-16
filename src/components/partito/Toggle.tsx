@@ -38,19 +38,21 @@ export const Toggle: React.FC<ToggleProps> = ({
           disabled={disabled}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="sr-only"
+          className="sr-only focus:outline-none focus-visible:outline-none"
         />
         <div
           className={cn(
-            'w-12 h-7 rounded-full transition-colors duration-200',
-            checked ? 'bg-coral' : 'bg-warm-gray-300',
-            isFocused && 'ring-2 ring-coral/30'
+            'w-12 h-7 rounded-full border-2 transition-colors duration-200',
+            checked ? 'bg-sage border-sage' : 'bg-warm-gray-200 border-warm-gray-300',
+            isFocused && 'ring-2 ring-sage/30 ring-offset-2 ring-offset-background'
           )}
         >
           <div
             className={cn(
-              'w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 absolute top-1',
-              checked ? 'translate-x-6' : 'translate-x-1'
+              'w-5 h-5 rounded-full shadow-md transition-transform duration-200 absolute top-1 border',
+              checked
+                ? 'bg-white translate-x-6 border-white/0'
+                : 'bg-white translate-x-1 border-warm-gray-300'
             )}
           />
         </div>

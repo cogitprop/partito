@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Icon } from './Icon';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect } from "react";
+import { Icon } from "./Icon";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
   value?: string | null;
@@ -9,35 +9,47 @@ interface ImageUploadProps {
   className?: string;
 }
 
-export const ImageUpload: React.FC<ImageUploadProps> = ({
-  value,
-  onChange,
-  onRemove,
-  className,
-}) => {
+export const ImageUpload: React.FC<ImageUploadProps> = ({ value, onChange, onRemove, className }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // FIX: Track interval ID to clean up on unmount
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // FIX: Clean up interval on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a JPG, PNG, WebP, or GIF image.');
+      alert("Please upload a JPG, PNG, WebP, or GIF image.");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be less than 10MB.');
+      alert("Image must be less than 10MB.");
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(0);
 
-    const interval = setInterval(() => {
+    // Clear any existing interval before creating a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
       setUploadProgress((prev) => (prev >= 90 ? prev : prev + 10));
     }, 100);
 
@@ -45,8 +57,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
         const maxSize = 2048;
         let { width, height } = img;
@@ -65,9 +77,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         ctx?.drawImage(img, 0, 0, width, height);
 
         // Convert to webp to strip EXIF data
-        const dataUrl = canvas.toDataURL('image/webp', 0.85);
+        const dataUrl = canvas.toDataURL("image/webp", 0.85);
 
-        clearInterval(interval);
+        // FIX: Clear interval using ref
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         setUploadProgress(100);
 
         setTimeout(() => {
@@ -89,12 +105,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   if (value) {
     return (
-      <div className={cn('relative', className)}>
-        <img
-          src={value}
-          alt="Event cover"
-          className="w-full aspect-video object-cover rounded-lg"
-        />
+      <div className={cn("relative", className)}>
+        <img src={value} alt="Event cover" className="w-full aspect-video object-cover rounded-lg" />
         {onRemove && (
           <button
             type="button"
@@ -119,9 +131,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        'border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 min-h-[180px]',
-        isDragging ? 'border-coral bg-coral/5' : 'border-warm-gray-300 bg-transparent',
-        className
+        "border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 min-h-[180px]",
+        isDragging ? "border-coral bg-coral/5" : "border-warm-gray-300 bg-transparent",
+        className,
       )}
     >
       <input
@@ -135,24 +147,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       {isUploading ? (
         <>
           <div className="w-full max-w-[200px] h-2 bg-warm-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-coral transition-[width] duration-100"
-              style={{ width: `${uploadProgress}%` }}
-            />
+            <div className="h-full bg-coral transition-[width] duration-100" style={{ width: `${uploadProgress}%` }} />
           </div>
-          <span className="text-sm text-warm-gray-500">
-            Uploading... {uploadProgress}%
-          </span>
+          <span className="text-sm text-warm-gray-500">Uploading... {uploadProgress}%</span>
         </>
       ) : (
         <>
           <Icon name="image" size={48} className="text-warm-gray-400" />
-          <span className="text-base text-warm-gray-700">
-            Drag an image here or click to browse
-          </span>
-          <span className="text-sm text-warm-gray-500">
-            JPG, PNG, WebP, or GIF up to 10MB
-          </span>
+          <span className="text-base text-warm-gray-700">Drag an image here or click to browse</span>
+          <span className="text-sm text-warm-gray-500">JPG, PNG, WebP, or GIF up to 10MB</span>
           <span className="text-xs text-warm-gray-500 flex items-center gap-1">
             <Icon name="lock" size={12} /> Location data will be automatically removed
           </span>

@@ -3,6 +3,7 @@ import { Button } from './Button';
 import { Icon } from './Icon';
 import { Card } from './Card';
 import { useToast } from '@/contexts/ToastContext';
+import { getShareableEventUrl } from '@/lib/event-utils';
 
 interface EventSuccessModalProps {
   event: {
@@ -44,8 +45,9 @@ export const EventSuccessModal: React.FC<EventSuccessModalProps> = ({
   const { showToast } = useToast();
   const [showConfetti, setShowConfetti] = useState(true);
 
-  const publicUrl = `${window.location.origin}/e/${event.slug}`;
-  const editUrl = `${window.location.origin}/e/${event.slug}/edit?token=${event.edit_token}`;
+  // Use the production domain for shareable links
+  const publicUrl = getShareableEventUrl(event.slug);
+  const editUrl = `https://partito.org/e/${event.slug}/edit?token=${event.edit_token}`;
 
   // Stop confetti after 3 seconds
   useEffect(() => {

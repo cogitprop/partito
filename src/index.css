@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,53 +6,60 @@
 
 @layer base {
   :root {
-    /* Partito Design System Colors */
-    --coral: 0 100% 71%;
-    --coral-light: 0 100% 78%;
-    --coral-dark: 0 80% 62%;
+    /* Partito Design System Colors - Botanical Theme */
+    --terracotta: 20 70% 55%;
+    --terracotta-light: 20 70% 65%;
+    --terracotta-dark: 20 70% 45%;
+    --coral: 12 65% 55%;
+    --coral-light: 12 65% 65%;
+    --coral-dark: 12 65% 45%;
     --white: 0 0% 100%;
-    --cream: 24 100% 98%;
-    --warm-gray-50: 20 14% 97%;
-    --warm-gray-100: 20 14% 95%;
-    --warm-gray-200: 20 12% 91%;
-    --warm-gray-300: 20 8% 82%;
-    --warm-gray-400: 20 6% 70%;
-    --warm-gray-500: 15 4% 59%;
-    --warm-gray-700: 12 3% 35%;
-    --warm-gray-900: 15 5% 17%;
-    --honey: 36 91% 55%;
-    --sage: 144 30% 64%;
-    --sky: 210 63% 60%;
-    --success: 144 30% 64%;
-    --error: 0 80% 62%;
-    --warning: 36 91% 55%;
-    --info: 210 63% 60%;
+    --cream: 42 60% 95%;
+    --cream-dark: 40 45% 90%;
+    --warm-gray-50: 40 30% 97%;
+    --warm-gray-100: 40 25% 94%;
+    --warm-gray-200: 38 20% 88%;
+    --warm-gray-300: 35 15% 78%;
+    --warm-gray-400: 30 10% 62%;
+    --warm-gray-500: 25 8% 50%;
+    --warm-gray-700: 20 10% 30%;
+    --warm-gray-900: 20 15% 18%;
+    --sage: 145 25% 50%;
+    --sage-light: 145 30% 65%;
+    --sage-dark: 145 25% 40%;
+    --honey: 36 75% 55%;
+    --sky: 210 50% 55%;
+    --success: 145 25% 50%;
+    --error: 0 65% 55%;
+    --warning: 36 75% 55%;
+    --info: 210 50% 55%;
 
     /* Shadcn mappings */
-    --background: 0 0% 100%;
-    --foreground: 15 5% 17%;
+    --background: 42 60% 95%;
+    --foreground: 20 15% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 15 5% 17%;
+    --card-foreground: 20 15% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 15 5% 17%;
-    --primary: 0 100% 71%;
+    --popover-foreground: 20 15% 18%;
+    --primary: 145 25% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 14% 95%;
-    --secondary-foreground: 15 5% 17%;
-    --muted: 20 14% 95%;
-    --muted-foreground: 15 4% 59%;
-    --accent: 24 100% 98%;
-    --accent-foreground: 15 5% 17%;
-    --destructive: 0 80% 62%;
+    --secondary: 40 25% 94%;
+    --secondary-foreground: 20 15% 18%;
+    --muted: 40 25% 94%;
+    --muted-foreground: 25 8% 50%;
+    --accent: 20 70% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 20 12% 91%;
-    --input: 20 12% 91%;
-    --ring: 0 100% 71%;
+    --border: 38 20% 88%;
+    --input: 38 20% 88%;
+    --ring: 145 25% 50%;
     --radius: 0.5rem;
 
     /* Typography */
     --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-body: 'Inter', system-ui, sans-serif;
+    --font-logo: 'Cormorant Garamond', Georgia, serif;
   }
 }
 
@@ -77,6 +84,10 @@
   
   .font-body {
     font-family: var(--font-body);
+  }
+
+  .font-logo {
+    font-family: var(--font-logo);
   }
 }
 

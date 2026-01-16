@@ -10,6 +10,7 @@ import { Toggle } from "@/components/partito/Toggle";
 import { NumberStepper } from "@/components/partito/NumberStepper";
 import { CustomQuestionsBuilder } from "@/components/partito/CustomQuestionsBuilder";
 import { EventSuccessModal } from "@/components/partito/EventSuccessModal";
+import { DateTimePicker } from "@/components/partito/DateTimePicker";
 import { useToast } from "@/contexts/ToastContext";
 import { createEvent, type CreateEventResult } from "@/lib/data-store";
 import { isValidEmail } from "@/lib/event-utils";
@@ -266,7 +267,10 @@ const CreateEvent = () => {
         // Handle rate limit or other errors
         if (result.isRateLimited) {
           const minutes = Math.ceil((result.retryAfter ?? 3600) / 60);
-          showToast(`Rate limit exceeded. You can create up to 5 events per hour. Please try again in ${minutes} minutes.`, "error");
+          showToast(
+            `Rate limit exceeded. You can create up to 5 events per hour. Please try again in ${minutes} minutes.`,
+            "error",
+          );
         } else {
           showToast(result.error || "Failed to create event. Please try again.", "error");
         }
@@ -401,19 +405,23 @@ const CreateEvent = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <DateTimePicker
                   label="Start Date & Time"
-                  type="datetime-local"
                   value={formData.start_time}
-                  onChange={(e) => updateField("start_time", e.target.value)}
+                  onChange={(val) => updateField("start_time", val)}
                   required
+                  timezone={formData.timezone}
+                  onTimezoneChange={(tz) => updateField("timezone", tz)}
+                  showTimezone
                 />
-                <Input
+                {/* FIX: Added timezone prop to ensure end time is stored correctly */}
+                <DateTimePicker
                   label="End Date & Time"
-                  type="datetime-local"
                   value={formData.end_time || ""}
-                  onChange={(e) => updateField("end_time", e.target.value)}
+                  onChange={(val) => updateField("end_time", val)}
+                  placeholder="Optional"
+                  timezone={formData.timezone}
                 />
               </div>
             </div>
@@ -548,7 +556,7 @@ const CreateEvent = () => {
                     value={formData.max_plus_ones ?? 2}
                     onChange={(val) => updateField("max_plus_ones", val)}
                     min={1}
-                    max={10}
+                    max={3}
                   />
                 )}
               </div>

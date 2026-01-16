@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from './Button';
+import { Logo } from './Logo';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -41,8 +42,8 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false, className }) =>
   return (
     <header
       className={cn(
-        'bg-white px-6 py-4 relative z-50',
-        !minimal && 'border-b border-warm-gray-100',
+        'bg-cream px-6 py-4 relative z-50',
+        !minimal && 'border-b border-warm-gray-200',
         className
       )}
     >
@@ -51,9 +52,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false, className }) =>
           onClick={() => handleNavigate('home')}
           className="bg-transparent border-none cursor-pointer flex items-center gap-2"
         >
-          <span className="font-heading text-2xl font-bold text-coral">
-            Partito
-          </span>
+          <Logo size="md" />
         </button>
 
         {!minimal ? (
@@ -64,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false, className }) =>
                 <button
                   key={item.key}
                   onClick={() => handleNavigate(item.key)}
-                  className="bg-transparent border-none cursor-pointer text-warm-gray-700 text-base hover:text-coral transition-colors"
+                  className="bg-transparent border-none cursor-pointer text-warm-gray-700 text-base hover:text-sage-dark transition-colors"
                 >
                   {item.label}
                 </button>
@@ -75,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false, className }) =>
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden bg-transparent border-none cursor-pointer p-2 text-warm-gray-700 hover:text-coral transition-colors"
+              className="md:hidden bg-transparent border-none cursor-pointer p-2 text-warm-gray-700 hover:text-sage-dark transition-colors"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -94,18 +93,18 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false, className }) =>
 
       {/* Mobile Menu */}
       {!minimal && mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-warm-gray-100 shadow-lg z-50">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-cream border-b border-warm-gray-200 shadow-lg z-50">
           <nav className="flex flex-col p-4 gap-2">
             {navItems.map((item) => (
               <button
                 key={item.key}
                 onClick={() => handleNavigate(item.key)}
-                className="bg-transparent border-none cursor-pointer text-warm-gray-700 text-base hover:text-coral transition-colors text-left py-3 px-4 rounded-lg hover:bg-warm-gray-50"
+                className="bg-transparent border-none cursor-pointer text-warm-gray-700 text-base hover:text-sage-dark transition-colors text-left py-3 px-4 rounded-lg hover:bg-cream-dark"
               >
                 {item.label}
               </button>
             ))}
-            <div className="pt-2 border-t border-warm-gray-100 mt-2">
+            <div className="pt-2 border-t border-warm-gray-200 mt-2">
               <Button 
                 onClick={() => handleNavigate('create')} 
                 className="w-full justify-center"

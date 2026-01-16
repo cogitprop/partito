@@ -275,6 +275,7 @@ export const createRsvp = async (rsvpData: CreateRsvpData): Promise<CreateRsvpRe
     was_waitlisted?: boolean;
     at_capacity?: boolean;
     error?: string;
+    notify_rsvp_id?: string;
   };
 
   if (!result.success) {
@@ -287,24 +288,22 @@ export const createRsvp = async (rsvpData: CreateRsvpData): Promise<CreateRsvpRe
     };
   }
 
-  // Trigger RSVP notification (fire and forget - don't block on it)
-  if (result.rsvp && !result.was_updated) {
-    supabase.functions.invoke("notify-rsvp", {
-      body: {
-        eventId: rsvpData.event_id,
-        guestName: rsvpData.name,
-        guestEmail: rsvpData.email,
-        status: rsvpData.status,
-        plusOnes: rsvpData.plus_ones,
-        dietaryNote: rsvpData.dietary_note,
-        wasWaitlisted: result.was_waitlisted,
-      },
-    }).catch((notifyError) => {
-      // Silently log notification errors - don't fail the RSVP
+  // Send RSVP notification for new RSVPs (not updates)
+  // This is called after the RPC succeeds to ensure only real RSVPs trigger notifications
+  if (result.notify_rsvp_id && !result.was_updated) {
+    try {
+      await supabase.functions.invoke("notify-rsvp", {
+        body: {
+          rsvpId: result.notify_rsvp_id,
+          wasWaitlisted: result.was_waitlisted || false,
+        },
+      });
+    } catch (notifyError) {
+      // Log but don't fail - notification is best-effort
       if (import.meta.env.DEV) {
-        console.error("Error sending RSVP notification:", notifyError);
+        console.error("Failed to send RSVP notification:", notifyError);
       }
-    });
+    }
   }
 
   return {
@@ -324,14 +323,13 @@ export const getRsvpsForEvent = async (eventId: string): Promise<Rsvp[]> => {
     .order("created_at", { ascending: true });
 
   if (error) {
-    if (import.meta.env.DEV) {
-      console.error("Error fetching RSVPs:", error);
-    }
+    // Always log so we can diagnose production issues (this is non-PII)
+    console.error("Error fetching RSVPs:", error);
     return [];
   }
 
   // Public RSVPs don't include email - add null for type compatibility
-  return (data || []).map(r => ({ ...r, email: null, fingerprint: null, notifications_enabled: null })) as Rsvp[];
+  return (data || []).map((r) => ({ ...r, email: null, fingerprint: null, notifications_enabled: null })) as Rsvp[];
 };
 
 // Get full RSVPs with emails for event host (requires edit token)
